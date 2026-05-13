@@ -1,0 +1,93 @@
+# OpenManus API Service Docker Compose
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    container_name: openmanus-api
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=sqlite:///data/api_keys.db
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - API_DEBUG=false
+      # Load from host environment if available
+      - LLM_API_KEY=${LLM_API_KEY:-}
+      - LLM_MODEL=${LLM_MODEL:-gpt-4o}
+    volumes:
+      - ./workspace:/app/workspace
+      - ./api_logs:/app/api_logs
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - openmanus
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  worker:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    container_name: openmanus-worker
+    command: python -m worker.worker --queue default
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=sqlite:///data/api_keys.db
+      - LLM_API_KEY=${LLM_API_KEY:-}
+    volumes:
+      - ./workspace:/app/workspace
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - openmanus
+    restart: unless-stopped
+    deploy:
+      replicas: 2
+
+  redis:
+    image: redis:7-alpine
+    container_name: openmanus-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - openmanus
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  nginx:
+    image: nginx:alpine
+    container_name: openmanus-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api
+    networks:
+      - openmanus
+    restart: unless-stopped
+
+networks:
+  openmanus:
+    driver: bridge
+
+volumes:
+  redis_data:
