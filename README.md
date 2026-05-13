@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.jpg" width="200"/>
+  <img src="https://vebtisearch.de/static/chat/1-bg.png" width="200"/>
 </p>
 
 English | [中文](README_zh.md) | [한국어](README_ko.md) | [日本語](README_ja.md)
