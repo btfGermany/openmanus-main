@@ -1,0 +1,44 @@
+# OpenManus API Service Configuration
+
+# API Service
+[api]
+host = "0.0.0.0"
+port = 8000
+debug = false
+workers = 1
+title = "OpenManus API"
+version = "1.0.0"
+description = "Production AI Agent API Service"
+
+# Redis
+[redis]
+url = "redis://redis:6379"
+
+# Database
+[database]
+url = "sqlite:///data/api_keys.db"
+
+# Storage
+[storage]
+base_path = "/app/workspace/tasks"
+log_path = "/app/api_logs"
+cleanup_days = 7
+
+# Rate Limiting
+[rate_limit]
+enabled = true
+window_seconds = 60
+
+# Worker
+[worker]
+concurrency = 5
+timeout_default = 300
+cleanup_on_shutdown = true
+
+# API Key Management
+[apikey]
+admin_key = ""  # Set a secure admin key in production
+key_prefix = "sk-manus-"
+default_rate_limit_rpm = 60
+default_rate_limit_rph = 1000
+default_concurrent_tasks = 3
